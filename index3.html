@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人成长属性追踪系统</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(to right, #4A00E0, #8E2DE2);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.05);
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .control-group {
+            margin: 0 15px;
+        }
+        
+        .control-group label {
+            margin-right: 8px;
+            font-weight: 600;
+        }
+        
+        .control-group select {
+            padding: 8px 12px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            padding: 20px;
+        }
+        
+        .chart-container {
+            flex: 1;
+            min-width: 300px;
+            padding: 20px;
+        }
+        
+        .form-container {
+            flex: 1;
+            min-width: 300px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-left: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #444;
+        }
+        
+        select, input, textarea, button {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
+        button {
+            background: linear-gradient(to right, #4A00E0, #8E2DE2);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .delete-btn {
+            background: #ff4757;
+            padding: 6px 12px;
+            font-size: 14px;
+            width: auto;
+        }
+        
+        .delete-btn:hover {
+            background: #ff2e43;
+        }
+        
+        .history {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background-color: #4A00E0;
+            color: white;
+        }
+        
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        
+        .attribute-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+        
+        .execution { background-color: #FF6B6B; color: white; }
+        .knowledge { background-color: #4ECDC4; color: white; }
+        .professional { background-color: #45B7D1; color: white; }
+        .interest { background-color: #96CEB4; color: white; }
+        .academic { background-color: #FFEAA7; color: #333; }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .form-container {
+                margin-left: 0;
+                margin-top: 20px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .control-group {
+                margin: 5px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>个人成长属性追踪系统</h1>
+            <p class="subtitle">记录每日成长，可视化属性提升</p>
+        </header>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label for="periodSelect">查看周期：</label>
+                <select id="periodSelect">
+                    <option value="week">本周</option>
+                    <option value="month">本月</option>
+                    <option value="all">全部历史</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="chartType">图表类型：</label>
+                <select id="chartType">
+                    <option value="radar">雷达图</option>
+                    <option value="bar">柱状图</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="chart-container">
+                <canvas id="growthChart"></canvas>
+            </div>
+            
+            <div class="form-container">
+                <h2>记录今日成长</h2>
+                <form id="growthForm">
+                    <div class="form-group">
+                        <label for="date">日期</label>
+                        <input type="date" id="date" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="attribute">属性</label>
+                        <select id="attribute" required>
+                            <option value="">选择属性</option>
+                            <option value="execution">执行力</option>
+                            <option value="knowledge">知识</option>
+                            <option value="professional">专业</option>
+                            <option value="interest">兴趣</option>
+                            <option value="academic">课业</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="activity">活动内容</label>
+                        <textarea id="activity" rows="3" placeholder="例如：学习40分钟编程" required></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="points">获得点数</label>
+                        <input type="number" id="points" min="1" max="100" placeholder="例如：20" required>
+                    </div>
+                    
+                    <button type="submit">记录成长</button>
+                </form>
+                
+                <div class="history">
+                    <h2>成长记录</h2>
+                    <table id="recordsTable">
+                        <thead>
+                            <tr>
+                                <th>日期</th>
+                                <th>属性</th>
+                                <th>活动</th>
+                                <th>点数</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- 记录将通过JavaScript动态添加 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 初始化属性数据
+        let attributes = {
+            execution: 0,
+            knowledge: 0,
+            professional: 0,
+            interest: 0,
+            academic: 0
+        };
+        
+        // 图表实例
+        let growthChart = null;
+        
+        // 从本地存储加载数据
+        function loadData() {
+            const savedAttributes = localStorage.getItem('personaAttributes');
+            if (savedAttributes) {
+                attributes = JSON.parse(savedAttributes);
+            }
+            
+            updateChart();
+            displayRecords();
+        }
+        
+        // 保存数据到本地存储
+        function saveData() {
+            localStorage.setItem('personaAttributes', JSON.stringify(attributes));
+        }
+        
+        // 初始化图表
+        function initChart() {
+            const ctx = document.getElementById('growthChart').getContext('2d');
+            const period = document.getElementById('periodSelect').value;
+            const chartType = document.getElementById('chartType').value;
+            
+            // 销毁现有图表
+            if (growthChart) {
+                growthChart.destroy();
+            }
+            
+            // 根据周期获取数据
+            const data = getDataByPeriod(period);
+            
+            // 根据选择的图表类型创建图表
+            if (chartType === 'radar') {
+                growthChart = new Chart(ctx, {
+                    type: 'radar',
+                    data: {
+                        labels: ['执行力', '知识', '专业', '兴趣', '课业'],
+                        datasets: [{
+                            label: '属性成长',
+                            data: [
+                                data.execution,
+                                data.knowledge,
+                                data.professional,
+                                data.interest,
+                                data.academic
+                            ],
+                            backgroundColor: 'rgba(74, 0, 224, 0.2)',
+                            borderColor: 'rgba(74, 0, 224, 1)',
+                            borderWidth: 2,
+                            pointBackgroundColor: 'rgba(74, 0, 224, 1)',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: 'rgba(74, 0, 224, 1)'
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            r: {
+                                angleLines: {
+                                    display: true
+                                },
+                                suggestedMin: 0,
+                                suggestedMax: getMaxValue(data) + 20
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.dataset.label + ': ' + context.raw + ' 点';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            } else {
+                growthChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['执行力', '知识', '专业', '兴趣', '课业'],
+                        datasets: [{
+                            label: '属性成长',
+                            data: [
+                                data.execution,
+                                data.knowledge,
+                                data.professional,
+                                data.interest,
+                                data.academic
+                            ],
+                            backgroundColor: [
+                                'rgba(255, 107, 107, 0.7)',
+                                'rgba(78, 205, 196, 0.7)',
+                                'rgba(69, 183, 209, 0.7)',
+                                'rgba(150, 206, 180, 0.7)',
+                                'rgba(255, 234, 167, 0.7)'
+                            ],
+                            borderColor: [
+                                'rgb(255, 107, 107)',
+                                'rgb(78, 205, 196)',
+                                'rgb(69, 183, 209)',
+                                'rgb(150, 206, 180)',
+                                'rgb(255, 234, 167)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                suggestedMax: getMaxValue(data) + 20
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+        }
+        
+        // 根据周期获取数据
+        function getDataByPeriod(period) {
+            const records = JSON.parse(localStorage.getItem('personaRecords') || '[]');
+            const now = new Date();
+            let startDate;
+            
+            switch(period) {
+                case 'week':
+                    // 获取本周第一天（周一）
+                    startDate = new Date(now);
+                    startDate.setDate(now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1));
+                    startDate.setHours(0, 0, 0, 0);
+                    break;
+                case 'month':
+                    // 获取本月第一天
+                    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                    break;
+                case 'all':
+                default:
+                    // 全部数据
+                    startDate = new Date(0); // 最早日期
+                    break;
+            }
+            
+            // 初始化周期数据
+            const periodData = {
+                execution: 0,
+                knowledge: 0,
+                professional: 0,
+                interest: 0,
+                academic: 0
+            };
+            
+            // 计算周期内各属性总和
+            records.forEach(record => {
+                const recordDate = new Date(record.date);
+                if (recordDate >= startDate) {
+                    periodData[record.attribute] += record.points;
+                }
+            });
+            
+            return periodData;
+        }
+        
+        // 获取数据中的最大值，用于图表缩放
+        function getMaxValue(data) {
+            return Math.max(
+                data.execution,
+                data.knowledge,
+                data.professional,
+                data.interest,
+                data.academic
+            );
+        }
+        
+        // 更新图表
+        function updateChart() {
+            const period = document.getElementById('periodSelect').value;
+            const data = getDataByPeriod(period);
+            
+            if (growthChart) {
+                if (growthChart.config.type === 'radar') {
+                    growthChart.data.datasets[0].data = [
+                        data.execution,
+                        data.knowledge,
+                        data.professional,
+                        data.interest,
+                        data.academic
+                    ];
+                    
+                    // 更新雷达图的最大值
+                    growthChart.options.scales.r.suggestedMax = getMaxValue(data) + 20;
+                } else {
+                    growthChart.data.datasets[0].data = [
+                        data.execution,
+                        data.knowledge,
+                        data.professional,
+                        data.interest,
+                        data.academic
+                    ];
+                    
+                    // 更新柱状图的最大值
+                    growthChart.options.scales.y.suggestedMax = getMaxValue(data) + 20;
+                }
+                
+                growthChart.update();
+            }
+        }
+        
+        // 显示记录
+        function displayRecords() {
+            const records = JSON.parse(localStorage.getItem('personaRecords') || '[]');
+            const tableBody = document.querySelector('#recordsTable tbody');
+            tableBody.innerHTML = '';
+            
+            // 按日期倒序排列
+            records.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            records.forEach((record, index) => {
+                const row = document.createElement('tr');
+                
+                // 日期
+                const dateCell = document.createElement('td');
+                dateCell.textContent = record.date;
+                row.appendChild(dateCell);
+                
+                // 属性
+                const attributeCell = document.createElement('td');
+                const badge = document.createElement('span');
+                badge.textContent = getAttributeName(record.attribute);
+                badge.className = 'attribute-badge ' + record.attribute;
+                attributeCell.appendChild(badge);
+                row.appendChild(attributeCell);
+                
+                // 活动
+                const activityCell = document.createElement('td');
+                activityCell.textContent = record.activity;
+                row.appendChild(activityCell);
+                
+                // 点数
+                const pointsCell = document.createElement('td');
+                pointsCell.textContent = record.points;
+                row.appendChild(pointsCell);
+                
+                // 删除按钮
+                const deleteCell = document.createElement('td');
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = '删除';
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.onclick = function() {
+                    deleteRecord(index);
+                };
+                deleteCell.appendChild(deleteBtn);
+                row.appendChild(deleteCell);
+                
+                tableBody.appendChild(row);
+            });
+        }
+        
+        // 删除记录
+        function deleteRecord(index) {
+            const records = JSON.parse(localStorage.getItem('personaRecords') || '[]');
+            
+            if (index >= 0 && index < records.length) {
+                const record = records[index];
+                
+                // 从总属性中减去点数
+                attributes[record.attribute] -= record.points;
+                if (attributes[record.attribute] < 0) attributes[record.attribute] = 0;
+                
+                // 从记录中删除
+                records.splice(index, 1);
+                
+                // 保存更新后的数据
+                localStorage.setItem('personaRecords', JSON.stringify(records));
+                saveData();
+                
+                // 更新UI
+                updateChart();
+                displayRecords();
+                
+                alert(`已删除记录：${record.date} - ${getAttributeName(record.attribute)}`);
+            }
+        }
+        
+        // 获取属性中文名称
+        function getAttributeName(attribute) {
+            const names = {
+                'execution': '执行力',
+                'knowledge': '知识',
+                'professional': '专业',
+                'interest': '兴趣',
+                'academic': '课业'
+            };
+            return names[attribute] || attribute;
+        }
+        
+        // 处理表单提交
+        document.getElementById('growthForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const date = document.getElementById('date').value;
+            const attribute = document.getElementById('attribute').value;
+            const activity = document.getElementById('activity').value;
+            const points = parseInt(document.getElementById('points').value);
+            
+            // 更新属性值
+            attributes[attribute] += points;
+            
+            // 保存记录
+            const records = JSON.parse(localStorage.getItem('personaRecords') || '[]');
+            records.push({
+                date,
+                attribute,
+                activity,
+                points
+            });
+            localStorage.setItem('personaRecords', JSON.stringify(records));
+            
+            // 保存属性数据
+            saveData();
+            
+            // 更新UI
+            updateChart();
+            displayRecords();
+            
+            // 重置表单
+            this.reset();
+            document.getElementById('date').valueAsDate = new Date();
+            
+            // 显示成功消息
+            alert(`成功记录！${getAttributeName(attribute)}属性增加了${points}点！`);
+        });
+        
+        // 设置默认日期为今天
+        document.getElementById('date').valueAsDate = new Date();
+        
+        // 周期选择变化时更新图表
+        document.getElementById('periodSelect').addEventListener('change', function() {
+            updateChart();
+        });
+        
+        // 图表类型变化时重新初始化图表
+        document.getElementById('chartType').addEventListener('change', function() {
+            initChart();
+        });
+        
+        // 初始化应用
+        window.onload = function() {
+            initChart();
+            loadData();
+        };
+    </script>
+</body>
+</html>
